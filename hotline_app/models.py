@@ -17,7 +17,7 @@ class Story(db.Model):
     dt = db.Column(db.DateTime, default=datetime.datetime.now)
 
 
-    def __init__(self, call_sid, from_number, recording_url, contact_ok=False, is_approved=False):
+    def __init__(self, call_sid, from_number, recording_url, contact_ok=False, is_approved=None):
         self.call_sid = call_sid
         self.from_number = from_number
         self.recording_url = recording_url

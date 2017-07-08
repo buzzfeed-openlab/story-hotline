@@ -1,13 +1,16 @@
 from flask import flash, redirect, request, render_template, Response, session
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
+from sqlalchemy.sql.expression import func
+import twilio.twiml
+from twilio.rest import TwilioRestClient
+
+import importlib
+
 from hotline_app import create_app
 from hotline_app import config
 from hotline_app.models import Story
 from hotline_app.database import db
-import twilio.twiml
-from twilio.rest import TwilioRestClient
-import importlib
 
 
 
@@ -95,6 +98,7 @@ def handle_recording():
 
     return str(resp)
 
+
 def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
@@ -117,6 +121,33 @@ def requires_auth(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
+
+
+@application.route('/review')
+@requires_auth
+def review():
+
+    review_queue = Story.query.filter_by(is_approved=None).all()
+    approved = Story.query.filter_by(is_approved=True).all()
+    disapproved = Story.query.filter_by(is_approved=False).all()
+
+    return render_template('review.html', review_queue = review_queue, approved=approved, disapproved=disapproved)
+
+@application.route('/approve/<story_id>')
+@requires_auth
+def approve(story_id):
+    story = Story.query.get(story_id)
+    story.is_approved = True
+    db.session.commit()
+    return redirect('/review')
+
+@application.route('/disapprove/<story_id>')
+@requires_auth
+def disapprove(story_id):
+    story = Story.query.get(story_id)
+    story.is_approved = False
+    db.session.commit()
+    return redirect('/review')
 
 
 @application.route('/settings', methods=['GET', 'POST'])
