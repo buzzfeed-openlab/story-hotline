@@ -19,6 +19,82 @@ def index():
     return render_template('index.html')
 
 
+@application.route("/incoming-call", methods=['GET', 'POST'])
+def incoming_call():
+    """Respond to incoming requests."""
+    resp = twilio.twiml.Response()
+    # recording: introducing the project
+    resp.say("hello this is a hotline for sharing stories about V C harassment")
+    resp.pause(length=1)
+    resp.say("to listen to a story, press 1. to contribute a story, press 2.")
+    resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
+
+    return str(resp)
+
+@application.route("/handle-keypress/<decision>", methods=['GET', 'POST'])
+def handle_keypress(decision):
+
+    pressed = request.values.get('Digits', None)
+    call_sid = request.values.get('CallSid', None)
+    resp = twilio.twiml.Response()
+
+    if decision=="listen-share":
+        if pressed == '1': # listening to a story
+            resp.say("here is a randomly selected story")
+            resp.pause(length=1)
+
+            # grabbing a random story
+            random_story = Story.query.filter_by(is_approved=True).order_by(func.rand()).first()
+            if random_story:
+                resp.play(random_story.recording_url)
+
+            resp.pause(length=1)
+            resp.say("to listen to another story, press 1. to contribute a story, press 2.")
+            resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
+        elif pressed == '2': # sharing a story
+            resp.say("if you experienced harassment but chose to stay quiet - what kept you from speaking up?")
+            resp.say("your phone number will be kept anonymous. you have 60 seconds to record your story after the beep, and press any key when you're done")
+            resp.record(maxLength="60", action="/handle-recording")
+        else:
+            resp.say("to listen to a story, press 1. to contribute a story, press 2.")
+            resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
+
+    elif decision=="consent-contact":
+        if pressed == '1': # ok to contact
+            resp.say("thank you for your response")
+
+            # update contact_ok flag
+            story = Story.query.filter_by(call_sid=call_sid).first()
+            story.contact_ok = True
+            db.session.commit()
+
+        elif pressed == '2': # not ok to contact
+            resp.say("ok we won't share your phone number with any reporters, thank you for your response")
+
+
+    return str(resp)
+
+
+@application.route("/handle-recording", methods=['GET', 'POST'])
+def handle_recording():
+    recording_url = request.values.get('RecordingUrl', None)
+    call_sid = request.values.get('CallSid', None)
+    from_number = request.values.get('From', None)
+
+    resp = twilio.twiml.Response()
+
+    if recording_url:
+        new_story = Story(call_sid, from_number, recording_url)
+        db.session.add(new_story)
+        db.session.commit()
+
+    resp.say("thanks!")
+    resp.pause(length=1)
+    resp.say("if you'd be willing to be contacted by a buzzfeed reporter, press 1. if not, press 2.")
+    resp.gather(numDigits=1, action="/handle-keypress/consent-contact", method="POST", timeout=30)
+
+    return str(resp)
+
 def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
