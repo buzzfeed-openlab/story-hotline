@@ -32,9 +32,6 @@ if not os.path.isfile(config_filepath):
         json.dump(config_settings, f, indent=4)
 
 
-# TODO: handle when config file exists but env vars have been updated
-
-
 
 def update_config(updates):
 
@@ -61,4 +58,6 @@ with open(config_filepath) as f:
 
     CONFIG_VARS = {}
     for k, default_v in DEFAULT_SETTINGS.items():
-        CONFIG_VARS[k] = json_config.get(k, default_v)
+        # TODO: clean this up
+        # use env vars if they exist, otherwise config file, otherwise default
+        CONFIG_VARS[k] = os.getenv(k, json_config.get(k, default_v))
