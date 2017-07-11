@@ -65,33 +65,7 @@
       <br/>
 
 
-      <h2>
-        <i class="fa fa-times" aria-hidden="true"></i>Disapproved
-      </h2>
-
-      <table class="table table-condensed small">
-        <thead>
-          <tr><th>Message</th><th>Date</th><th></th></tr>
-        </thead>
-        <tbody>
-          {% for story in disapproved %}
-          <tr>
-            <td>
-              <audio controls>
-                <source src="{{ story.recording_url }}" type="audio/wav">
-                Your browser does not support the audio element.
-              </audio>
-            </td>
-            <td>{{ story.dt.strftime('%m/%d %H:%m') }}</td>
-            <td>
-              <a class="btn btn-success btn-sm" href="/approve/{{ story.id }}" title="Approve">
-                <i class="fa fa-check" aria-hidden="true"></i>
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <a href="{{url_for('reviewtrash')}}">Review disapproved stories</a>
 
     </div>
   </div>

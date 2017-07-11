@@ -2,6 +2,7 @@ from flask import flash, redirect, request, render_template, Response, session
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 from sqlalchemy.sql.expression import func
+from sqlalchemy.exc import StatementError
 import twilio.twiml
 from twilio.rest import TwilioRestClient
 
@@ -47,7 +48,11 @@ def handle_keypress(decision):
             resp.pause(length=1)
 
             # grabbing a random story
-            random_story = Story.query.filter_by(is_approved=True).order_by(func.rand()).first()
+            try:
+                random_story = Story.query.filter_by(is_approved=True).order_by(func.rand()).first()
+            except StatementError:
+                db.session.rollback()
+                random_story = Story.query.filter_by(is_approved=True).order_by(func.rand()).first()
             if random_story:
                 resp.play(random_story.recording_url)
 
@@ -87,9 +92,15 @@ def handle_recording():
     resp = twilio.twiml.Response()
 
     if recording_url:
-        new_story = Story(call_sid, from_number, recording_url)
-        db.session.add(new_story)
-        db.session.commit()
+        try:
+            new_story = Story(call_sid, from_number, recording_url)
+            db.session.add(new_story)
+            db.session.commit()
+        except StatementError:
+            db.session.rollback()
+            new_story = Story(call_sid, from_number, recording_url)
+            db.session.add(new_story)
+            db.session.commit()
 
     resp.say("thanks!")
     resp.pause(length=1)
@@ -132,6 +143,16 @@ def review():
     disapproved = Story.query.filter_by(is_approved=False).all()
 
     return render_template('review.html', review_queue = review_queue, approved=approved, disapproved=disapproved)
+
+@application.route('/reviewtrash')
+@requires_auth
+def reviewtrash():
+
+    disapproved = Story.query.filter_by(is_approved=False).all()
+
+    return render_template('reviewtrash.html', disapproved=disapproved)
+
+
 
 @application.route('/approve/<story_id>')
 @requires_auth
