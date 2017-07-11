@@ -12,7 +12,8 @@ DEFAULT_SETTINGS = {
     "TWILIO_AUTH_TOKEN" : "",
     "TWILIO_PHONE_NO" : "", # "+12223456789"
     "SECRET_KEY" : "another-secret-thing",
-    "DEBUG": "False"
+    "DEBUG": "False",
+    "APP_URL": "" # "https://my-hotline-url-here.com'"
 }
 
 

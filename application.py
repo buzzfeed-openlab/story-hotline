@@ -16,6 +16,7 @@ from hotline_app.database import db
 
 
 application = create_app()
+APP_URL = config.CONFIG_VARS['APP_URL']
 
 @application.route("/")
 def index():
@@ -28,9 +29,8 @@ def incoming_call():
     """Respond to incoming requests."""
     resp = twilio.twiml.Response()
     # recording: introducing the project
-    resp.say("hello this is a hotline for sharing stories about V C harassment")
-    resp.pause(length=1)
-    resp.say("to listen to a story, press 1. to contribute a story, press 2.")
+    resp.play(APP_URL+'/static/audio/intro.mp3')
+    resp.play(APP_URL+'/static/audio/decision_1a.mp3')
     resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
 
     return str(resp)
@@ -44,7 +44,7 @@ def handle_keypress(decision):
 
     if decision=="listen-share":
         if pressed == '1': # listening to a story
-            resp.say("here is a randomly selected story")
+            resp.play(APP_URL+'/static/audio/recording_intro.mp3')
             resp.pause(length=1)
 
             # grabbing a random story
@@ -57,19 +57,20 @@ def handle_keypress(decision):
                 resp.play(random_story.recording_url)
 
             resp.pause(length=1)
-            resp.say("to listen to another story, press 1. to contribute a story, press 2.")
+            resp.play(APP_URL+'/static/audio/decision_1b.mp3')
             resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
         elif pressed == '2': # sharing a story
-            resp.say("if you experienced harassment but chose to stay quiet - what kept you from speaking up?")
-            resp.say("your phone number will be kept anonymous. you have 60 seconds to record your story after the beep, and press any key when you're done")
+            resp.play(APP_URL+'/static/audio/prompt.mp3')
+            resp.play(APP_URL+'/static/audio/prompt_extra.mp3')
+            resp.pause(length=2)
             resp.record(maxLength="60", action="/handle-recording")
         else:
-            resp.say("to listen to a story, press 1. to contribute a story, press 2.")
+            resp.play(APP_URL+'/static/audio/decision_1a.mp3')
             resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
 
     elif decision=="consent-contact":
         if pressed == '1': # ok to contact
-            resp.say("thank you for your response")
+            resp.play(APP_URL+'/static/audio/thanks_a.mp3')
 
             # update contact_ok flag
             story = Story.query.filter_by(call_sid=call_sid).first()
@@ -77,7 +78,7 @@ def handle_keypress(decision):
             db.session.commit()
 
         elif pressed == '2': # not ok to contact
-            resp.say("ok we won't share your phone number with any reporters, thank you for your response")
+            resp.play(APP_URL+'/static/audio/thanks_b.mp3')
 
 
     return str(resp)
@@ -102,9 +103,8 @@ def handle_recording():
             db.session.add(new_story)
             db.session.commit()
 
-    resp.say("thanks!")
-    resp.pause(length=1)
-    resp.say("if you'd be willing to be contacted by a buzzfeed reporter, press 1. if not, press 2.")
+    resp.play(APP_URL+'/static/audio/thanks_a.mp3')
+    resp.play(APP_URL+'/static/audio/decision_2.mp3')
     resp.gather(numDigits=1, action="/handle-keypress/consent-contact", method="POST", timeout=30)
 
     return str(resp)
