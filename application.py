@@ -61,12 +61,16 @@ def handle_keypress(decision):
             resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
         elif pressed == '2': # sharing a story
             resp.play(APP_URL+'/static/audio/prompt.mp3')
-            resp.play(APP_URL+'/static/audio/prompt_extra.mp3')
-            resp.pause(length=2)
-            resp.record(maxLength="60", action="/handle-recording")
+            resp.pause(length=1)
+            resp.play(APP_URL+'/static/audio/prompt_extra_1.mp3')
+            resp.play(APP_URL+'/static/audio/prompt_extra_2.mp3')
+            resp.gather(numDigits=1, action="/handle-keypress/record", method="POST", timeout=60)
         else:
             resp.play(APP_URL+'/static/audio/decision_1a.mp3')
             resp.gather(numDigits=1, action="/handle-keypress/listen-share", method="POST", timeout=30)
+    elif decision=="record":
+        resp.play(APP_URL+'/static/audio/prompt_extra_3.mp3')
+        resp.record(maxLength="60", action="/handle-recording")
 
     elif decision=="consent-contact":
         if pressed == '1': # ok to contact
