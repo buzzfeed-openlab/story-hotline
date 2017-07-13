@@ -142,9 +142,14 @@ def requires_auth(f):
 @requires_auth
 def review():
 
-    review_queue = Story.query.filter_by(is_approved=None).all()
-    approved = Story.query.filter_by(is_approved=True).all()
-    disapproved = Story.query.filter_by(is_approved=False).all()
+    try:
+        review_queue = Story.query.filter_by(is_approved=None).all()
+        approved = Story.query.filter_by(is_approved=True).all()
+        disapproved = Story.query.filter_by(is_approved=False).all()
+    except StatementError:
+        review_queue = Story.query.filter_by(is_approved=None).all()
+        approved = Story.query.filter_by(is_approved=True).all()
+        disapproved = Story.query.filter_by(is_approved=False).all()
 
     return render_template('review.html', review_queue = review_queue, approved=approved, disapproved=disapproved)
 
