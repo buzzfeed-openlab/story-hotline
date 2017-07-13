@@ -147,6 +147,7 @@ def review():
         approved = Story.query.filter_by(is_approved=True).all()
         disapproved = Story.query.filter_by(is_approved=False).all()
     except StatementError:
+        db.session.rollback()
         review_queue = Story.query.filter_by(is_approved=None).all()
         approved = Story.query.filter_by(is_approved=True).all()
         disapproved = Story.query.filter_by(is_approved=False).all()
