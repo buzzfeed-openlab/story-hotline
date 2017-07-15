@@ -7,7 +7,7 @@
       <h1>Stories to review</h1>
       <table class="table table-condensed small">
         <thead>
-          <tr><th>Message</th><th>Date</th><th></th></tr>
+          <tr><th>Message</th><th>Phone</th><th>Date</th><th></th></tr>
         </thead>
         <tbody>
           {% for story in review_queue %}
@@ -17,6 +17,13 @@
                 <source src="{{ story.recording_url }}" type="audio/wav">
                 Your browser does not support the audio element.
               </audio>
+            </td>
+            <td>
+              {% if story.contact_ok %}
+                {{ story.from_number }}
+              {% else %}
+              --
+              {% endif %}
             </td>
             <td>{{ story.dt.strftime('%m/%d %H:%m') }}</td>
             <td>
@@ -40,7 +47,7 @@
 
       <table class="table table-condensed small">
         <thead>
-          <tr><th>Message</th><th>Date</th><th></th></tr>
+          <tr><th>Message</th><th>Phone</th><th>Date</th><th></th></tr>
         </thead>
         <tbody>
           {% for story in approved %}
@@ -50,6 +57,13 @@
                 <source src="{{ story.recording_url }}" type="audio/wav">
                 Your browser does not support the audio element.
               </audio>
+            </td>
+            <td>
+              {% if story.contact_ok %}
+                {{ story.from_number }}
+              {% else %}
+              --
+              {% endif %}
             </td>
             <td>{{ story.dt.strftime('%m/%d %H:%m') }}</td>
             <td>
