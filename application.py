@@ -24,8 +24,9 @@ def index():
     return render_template('index.html')
 
 
-# this is for when a hotline is first launched and there aren't many stories yet
-# here, people only have the option to leave messages and don't yet have the option to record
+# this is where the twilio number should be configured to hit
+# when the hotline is first launched and there aren't many stories yet
+# here, people only be able to leave messages and don't yet have the option to record
 @application.route("/incoming-call-start", methods=['GET', 'POST'])
 def incoming_call_start():
     resp = twilio.twiml.Response()
@@ -41,6 +42,9 @@ def incoming_call_start():
     return str(resp)
 
 
+# this is where the twilio number should be configured to hit
+# when there are already several stories that have been approved to be heard
+# here, people will have the option to listen or to record
 @application.route("/incoming-call", methods=['GET', 'POST'])
 def incoming_call():
     resp = twilio.twiml.Response()
