@@ -24,9 +24,25 @@ def index():
     return render_template('index.html')
 
 
+# this is for when a hotline is first launched and there aren't many stories yet
+# here, people only have the option to leave messages and don't yet have the option to record
+@application.route("/incoming-call-start", methods=['GET', 'POST'])
+def incoming_call_start():
+    resp = twilio.twiml.Response()
+    # recording: introducing the project
+    resp.play(APP_URL+'/static/audio/intro.mp3')
+
+    resp.play(APP_URL+'/static/audio/prompt.mp3')
+    resp.pause(length=1)
+    resp.play(APP_URL+'/static/audio/prompt_extra_1.mp3')
+    resp.play(APP_URL+'/static/audio/prompt_extra_2.mp3')
+    resp.gather(numDigits=1, action="/handle-keypress/record", method="POST", timeout=60)
+
+    return str(resp)
+
+
 @application.route("/incoming-call", methods=['GET', 'POST'])
 def incoming_call():
-    """Respond to incoming requests."""
     resp = twilio.twiml.Response()
     # recording: introducing the project
     resp.play(APP_URL+'/static/audio/intro.mp3')
@@ -77,9 +93,15 @@ def handle_keypress(decision):
             resp.play(APP_URL+'/static/audio/thanks_a.mp3')
 
             # update contact_ok flag
-            story = Story.query.filter_by(call_sid=call_sid).first()
-            story.contact_ok = True
-            db.session.commit()
+            try:
+                story = Story.query.filter_by(call_sid=call_sid).first()
+                story.contact_ok = True
+                db.session.commit()
+            except StatementError:
+                db.session.rollback()
+                story = Story.query.filter_by(call_sid=call_sid).first()
+                story.contact_ok = True
+                db.session.commit()
 
         elif pressed == '2': # not ok to contact
             resp.play(APP_URL+'/static/audio/thanks_b.mp3')
@@ -145,14 +167,12 @@ def review():
     try:
         review_queue = Story.query.filter_by(is_approved=None).all()
         approved = Story.query.filter_by(is_approved=True).all()
-        disapproved = Story.query.filter_by(is_approved=False).all()
     except StatementError:
         db.session.rollback()
         review_queue = Story.query.filter_by(is_approved=None).all()
         approved = Story.query.filter_by(is_approved=True).all()
-        disapproved = Story.query.filter_by(is_approved=False).all()
 
-    return render_template('review.html', review_queue = review_queue, approved=approved, disapproved=disapproved)
+    return render_template('review.html', review_queue = review_queue, approved=approved)
 
 @application.route('/reviewtrash')
 @requires_auth
